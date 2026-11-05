@@ -1,0 +1,37 @@
+# ==============================================================================
+# Regras de Contexto e Governança para Agentes de IA (.cursorrules)
+# Projeto: TechCare OS - Disciplina de Qualidade e Teste de Software (QTS)
+# ==============================================================================
+
+# 1. Padrões de Código e Linguagem
+- Linguagem: Python 3.12+ gerenciado exclusivamente via uv.
+- Framework Web: FastAPI com tipagem estrita via Pydantic v2.
+- Estrutura de Diretórios: Código em src/atv2_integracao, testes em tests/.
+
+# 2. Pirâmide de Testes e Práticas de Qualidade
+- Testes de Integração:
+  - Marcação explícita: @pytest.mark.integration
+  - Utilizar Starlette/FastAPI TestClient com padrão AAA (Arrange, Act, Assert) documentado.
+  - Utilizar fixtures pytest com setup e teardown via yield (isolamento do repositório).
+  - Isolamento de serviços externos com Mocks (pytest-mock / mocker.patch).
+  - Cobertura obrigatória de cenários felizes (sucesso) e cenários de falha (recusa de negócio e falha de rede/timeout).
+  - Massa de dados sintéticos via Factory Pattern com Faker("pt_BR").
+
+- Testes End-to-End (E2E) e Acessibilidade:
+  - Marcação: @pytest.mark.e2e e @pytest.mark.accessibility
+  - Ferramenta: Playwright (pytest-playwright) com Page Object Model (POM).
+  - Seletores: Priorizar SEMPRE seletores semânticos acessíveis (get_by_role, get_by_label, get_by_text).
+  - Acessibilidade: Auditoria automatizada com Axe-core (axe-playwright-python) garantindo 0 violações WCAG 2.1 AA.
+  - Navegação por Teclado: Validar fluxo sequencial de tecla Tab e asserção to_be_focused().
+
+- Testes de Carga e Performance:
+  - Ferramenta: Locust (locustfile.py com HttpUser e tarefas ponderadas @task).
+  - Métricas avaliadas: Requisições por segundo (RPS), percentil p95 de tempo de resposta e taxa de falhas.
+
+# 3. Acessibilidade na Interface Web (HTML/CSS)
+- Sempre incluir lang="pt-BR" no elemento raiz <html>.
+- Garantir Skip Link visível no foco como primeiro elemento navegável.
+- Garantir contraste de cores mínimo de 4.5:1 para texto normal e 3:1 para controles gráficos.
+- Todos os campos de formulário <input>, <select>, <textarea> DEVEM ter <label for="..."> correspondente.
+- Alertas e mensagens de status devem possuir role="status" ou role="alert" com aria-live="polite".
+

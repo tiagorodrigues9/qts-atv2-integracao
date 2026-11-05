@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block content %}
+  {% if alert_message %}
+    <div id="feedback-alert" role="status" aria-live="polite" class="alert {% if alert_type == 'error' %}alert-error{% else %}alert-success{% endif %}">
+      <span>{{ alert_message }}</span>
+    </div>
+  {% endif %}
+
+  <div class="grid-layout">
+    <!-- Seção Formulário de Cadastro -->
+    <section class="card" aria-labelledby="form-heading">
+      <h2 id="form-heading" class="card-title">Abertura de Ordem de Serviço</h2>
+      <p class="card-description">Preencha os dados do cliente e do equipamento para triagem e validação de garantia.</p>
+
+      <form id="order-form" method="POST" action="/orders" novalidate>
+        <!-- Dados do Cliente -->
+        <fieldset style="border: none; padding: 0; margin-bottom: 1.25rem;">
+          <legend style="font-weight: 700; margin-bottom: 0.75rem; color: var(--color-primary);">1. Dados do Cliente</legend>
+
+          <div class="form-group">
+            <label for="customer_name" class="form-label">Nome Completo</label>
+            <input type="text" id="customer_name" name="customer_name" class="form-input" required autocomplete="name" placeholder="Ex: Maria Silva" />
+          </div>
+
+          <div class="form-group">
+            <label for="customer_email" class="form-label">E-mail</label>
+            <input type="email" id="customer_email" name="customer_email" class="form-input" required autocomplete="email" placeholder="Ex: maria.silva@email.com" />
+          </div>
+
+          <div class="form-group">
+            <label for="customer_phone" class="form-label">Telefone</label>
+            <input type="tel" id="customer_phone" name="customer_phone" class="form-input" required autocomplete="tel" placeholder="Ex: 11987654321" />
+          </div>
+
+          <div class="form-group">
+            <label for="customer_cpf" class="form-label">CPF</label>
+            <input type="text" id="customer_cpf" name="customer_cpf" class="form-input" required placeholder="Ex: 12345678901 (apenas números)" />
+          </div>
+        </fieldset>
+
+        <!-- Dados do Dispositivo -->
+        <fieldset style="border: none; padding: 0; margin-bottom: 1.25rem;">
+          <legend style="font-weight: 700; margin-bottom: 0.75rem; color: var(--color-primary);">2. Dados do Equipamento</legend>
+
+          <div class="form-group">
+            <label for="device_type" class="form-label">Tipo de Dispositivo</label>
+            <select id="device_type" name="device_type" class="form-select" required>
+              <option value="">Selecione o tipo</option>
+              <option value="Smartphone">Smartphone</option>
+              <option value="Notebook">Notebook</option>
+              <option value="Tablet">Tablet</option>
+              <option value="Smartwatch">Smartwatch</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="device_brand" class="form-label">Marca do Dispositivo</label>
+            <input type="text" id="device_brand" name="device_brand" class="form-input" required placeholder="Ex: Apple, Samsung, Dell" />
+          </div>
+
+          <div class="form-group">
+            <label for="device_model" class="form-label">Modelo do Dispositivo</label>
+            <input type="text" id="device_model" name="device_model" class="form-input" required placeholder="Ex: iPhone 14 Pro, Galaxy S23, XPS 15" />
+          </div>
+
+          <div class="form-group">
+            <label for="device_serial" class="form-label">Número de Série</label>
+            <input type="text" id="device_serial" name="device_serial" class="form-input" required placeholder="Ex: SN-987654321" />
+          </div>
+        </fieldset>
+
+        <!-- Detalhes do Serviço -->
+        <fieldset style="border: none; padding: 0; margin-bottom: 1.5rem;">
+          <legend style="font-weight: 700; margin-bottom: 0.75rem; color: var(--color-primary);">3. Diagnóstico e Orçamento</legend>
+
+          <div class="form-group">
+            <label for="issue_description" class="form-label">Descrição do Problema</label>
+            <textarea id="issue_description" name="issue_description" class="form-textarea" rows="3" required placeholder="Descreva os sintomas apresentados pelo dispositivo..."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="estimated_price" class="form-label">Valor Estimado (R$)</label>
+            <input type="number" id="estimated_price" name="estimated_price" class="form-input" step="0.01" min="1" required placeholder="Ex: 350.00" />
+          </div>
+        </fieldset>
+
+        <button type="submit" id="btn-submit-order" class="btn btn-primary">
+          Cadastrar Ordem de Serviço
+        </button>
+      </form>
+    </section>
+
+    <!-- Seção Lista de Ordens Cadastradas -->
+    <section class="card" aria-labelledby="list-heading">
+      <h2 id="list-heading" class="card-title">Ordens de Serviço Registradas</h2>
+      <p class="card-description">Acompanhamento em tempo real das ordens e status de garantia.</p>
+
+      <div class="table-responsive">
+        <table class="data-table" aria-label="Tabela de Ordens de Serviço Registradas">
+          <thead>
+            <tr>
+              <th scope="col">Número OS</th>
+              <th scope="col">Cliente</th>
+              <th scope="col">Equipamento</th>
+              <th scope="col">Orçamento</th>
+              <th scope="col">Status</th>
+              <th scope="col">Validação Externa</th>
+            </tr>
+          </thead>
+          <tbody id="orders-table-body">
+            {% for order in orders %}
+            <tr>
+              <td><strong>{{ order.order_number }}</strong></td>
+              <td>{{ order.customer.name }}</td>
+              <td>{{ order.device.brand }} {{ order.device.model }}</td>
+              <td>R$ {{ "%.2f"|format(order.estimated_price) }}</td>
+              <td>
+                {% if order.status.value == "APROVADO" %}
+                  <span class="badge badge-approved">{{ order.status.value }}</span>
+                {% elif order.status.value == "REJEITADO" %}
+                  <span class="badge badge-rejected">{{ order.status.value }}</span>
+                {% else %}
+                  <span class="badge badge-received">{{ order.status.value }}</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if order.external_validation_code %}
+                  <code>{{ order.external_validation_code }}</code>
+                {% else %}
+                  <span>{{ order.validation_message or "N/A" }}</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% else %}
+            <tr id="empty-orders-row">
+              <td colspan="6" style="text-align: center; color: var(--color-text-muted); padding: 2rem;">
+                Nenhuma ordem de serviço cadastrada no momento.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+{% endblock %}
+
